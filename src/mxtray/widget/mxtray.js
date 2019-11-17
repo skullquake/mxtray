@@ -57,7 +57,7 @@ require(
 					dojo.style(this.domNode,'position','absolute')
 					dojo.style(this.domNode,'bottom','8px')
 					dojo.style(this.domNode,'right','8px')
-					dojo.style(this.domNode,'z-index','99999999999999999999999!important')
+					dojo.style(this.domNode,'z-index','999999999999999999')
 					this.placeAt(dojo.query('body')[0]);
 					this.draw();
 					this.setupObserver();
