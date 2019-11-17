@@ -1,101 +1,227 @@
-define([
-    "dojo/_base/declare",
-    "mxui/widget/_WidgetBase",
-    "dijit/_TemplatedMixin",
-    "mxui/dom",
-    "dojo/dom",
-    "dojo/dom-prop",
-    "dojo/dom-geometry",
-    "dojo/dom-class",
-    "dojo/dom-style",
-    "dojo/dom-construct",
-    "dojo/_base/array",
-    "dojo/_base/lang",
-    "dojo/text",
-    "dojo/html",
-    "dojo/_base/event",
-    "mxtray/lib/jquery-1.11.2",
-    "dojo/text!mxtray/widget/template/mxtray.html"
-], function (declare, _WidgetBase, _TemplatedMixin, dom, dojoDom, dojoProp, dojoGeometry, dojoClass, dojoStyle, dojoConstruct, dojoArray, lang, dojoText, dojoHtml, dojoEvent, _jQuery, widgetTemplate) {
-    "use strict";
+require(
+	{
+		packages:[
+		]
+	},
+	[
+		"dojo/_base/declare",
+		"mxui/widget/_WidgetBase",
+		"dijit/_TemplatedMixin",
+		"mxui/dom",
+		"dojo/dom",
+		"dojo/dom-prop",
+		"dojo/dom-geometry",
+		"dojo/dom-class",
+		"dojo/dom-style",
+		"dojo/dom-construct",
+		"dojo/_base/array",
+		"dojo/_base/lang",
+		"dojo/text",
+		"dojo/html",
+		"dojo/_base/event",
+		"dojo/text!mxtray/widget/template/mxtray.html"
+	],
+	function(
+		declare,
+		_WidgetBase,
+		_TemplatedMixin,
+		dom,
+		dojoDom,
+		dojoProp,
+		dojoGeometry,
+		dojoClass,
+		dojoStyle,
+		dojoConstruct,
+		dojoArray,
+		lang,
+		dojoText,
+		dojoHtml,
+		dojoEvent,
+		widgetTemplate
+	){
+		return declare(
+			"mxtray.widget.mxtray",
+			[
+				_WidgetBase,
+				_TemplatedMixin
+			],
+			{
+				templateString: widgetTemplate,
+				widgetBase:null,
+				_handles: null,
+				_contextObj: null,
+				windows:{},
+				constructor:function(){
+					this._handles=[];
+				},
+				postCreate:function(){
+dojo.style(this.domNode,'position','fixed')
+dojo.style(this.domNode,'bottom','8px')
+dojo.style(this.domNode,'right','8px')
+dojo.style(this.domNode,'z-index','999999999999999999!important')
+					this.draw();
+					this.setupObserver();
+				},
+				setupObserver:function(){
+					this.observer=new MutationObserver(dojo.hitch(this,function(mutations) {
+						this.observer.disconnect();
+						this.draw();
+						this.observer.observe(document, {attributes: false, childList: true, characterData: false, subtree:true});
+					}));
+					this.observer.observe(document, {attributes: false, childList: true, characterData: false, subtree:true});
+				},
+				getdata:function(){
+					this.windows={};
+					dijit.registry.toArray().filter(
+						function(wid){
+							return wid.declaredClass=='mxui.widget.Dialog'||wid.declaredClass=='mxui.widget.DialogMessage'||wid.declaredClass=='mxui.widget.Window';
+						}
+					)
+					.forEach(
+						dojo.hitch(
+							this,
+							function(b,c){
+								this.windows[b.id]=b;
+							}
+						)
+					);
 
-    var $ = _jQuery.noConflict(true);
+				},
+				draw:function(){
+					this.getdata();
+					dojo.empty(this.domNode);
+					this.tray=dojo.create(
+						'div',
+						{
+							style:'margin:8px;padding:8px;'
+						}
+					);
+					this.domNode.appendChild(this.tray);
+					Object.keys(this.windows).forEach(
+						dojo.hitch(
+							this,
+							function(windows_k,windows_kidx){
+								var wid=dijit.byId(windows_k);
+								var icon=dojo.create(
+									'img',
+									{
 
-    return declare("mxtray.widget.mxtray", [ _WidgetBase, _TemplatedMixin ], {
+										'src':'/widgets/mxtray/widget/ui/icns/48x48/cs-windows.svg',
+										'data-widget-id':windows_k,
+										'style':'padding:8px;'
+									}
+								);
+								if(dojo.query('.minimize',dijit.byId(windows_k)._headerNode).length==0){
+									var icn_min=dojo.create(
+										'span',
+										{
+											'class':'minimize close',
+											'style':'padding-right:8px;padding-left:8px;',
+											'innerHTML':'-'
+										}
+									);
+									dojo.connect(
+										icn_min,
+										'click',
+										dojo.hitch(
+											this,
+											function(){
+												dojo.style(wid.domNode,'display','none')
+											}
+										)
+									);
+									dijit.byId(windows_k)._headerNode.prepend(
+										icn_min
+									);
+								}
+								this.connect(
+									icon,
+									'click',
+									dojo.hitch(
+										this,
+										function(tgt){
+											console.log(tgt);
+											var max_z=0;
+											dijit.registry.toArray().filter(
+												function(wid){
+												return wid.declaredClass=='mxui.widget.Dialog'||wid.declaredClass=='mxui.widget.DialogMessage'||wid.declaredClass=='mxui.widget.Window';
+												}
+											)
+											.forEach(
+												dojo.hitch(
+													this,
+													function(b,c){
+														max_z=max_z<dojo.style(b.domNode,'z-index')?dojo.style(b.domNode,'z-index'):max_z;
+													}
+												)
+											);
+											dojo.style(dijit.byId(windows_k).domNode,'z-index',max_z+1);
+											dojo.style(wid.domNode,'display','unset')
+										}
+									)
+								);
+								this.tray.appendChild(
+									icon
+								);
+							}
+						)
+					);
+				},
+				update:function(obj,callback){
+					this._contextObj=obj;
+					this._updateRendering(callback);
+				},
+				resize:function(box){
+				},
+				uninitialize:function(){
+				},
+				destroy:function(){
+				},
+				_updateRendering:function(callback){
+					/*
+					if(this._contextObj!==null){
+						dojoStyle.set(this.domNode,"display","block");
+					} else {
+						dojoStyle.set(this.domNode,"display","none");
+					}
+					*/
+					this._executeCallback(callback,"_updateRendering");
+				},
+				_execMf:function(mf,guid,cb){
+					if(mf&&guid){
+						mx.ui.action(
+							mf,
+							{
+								params:{
+									applyto:"selection",
+									guids:[
+										guid
+									]
+								},
+								callback:lang.hitch(
+									this,
+									function(objs){
+										if(cb&&typeof cb==="function"){
+											cb(objs);
+										}
+									}
+								),
+								error:function(error){
+									console.debug(error.description);
+								}
+							},
+							this
+						);
+					}
+				},
+				_executeCallback:function(cb,from){
+					if(cb&&typeof cb==="function"){
+						cb();
+					}
+				}
+			}
+		);
+	}
+);
 
-        templateString: widgetTemplate,
 
-
-        widgetBase: null,
-
-        // Internal variables.
-        _handles: null,
-        _contextObj: null,
-
-        constructor: function () {
-            this._handles = [];
-        },
-
-        postCreate: function () {
-            logger.debug(this.id + ".postCreate");
-        },
-
-        update: function (obj, callback) {
-            logger.debug(this.id + ".update");
-
-            this._contextObj = obj;
-            this._updateRendering(callback);
-        },
-
-        resize: function (box) {
-            logger.debug(this.id + ".resize");
-        },
-
-        uninitialize: function () {
-            logger.debug(this.id + ".uninitialize");
-        },
-
-        _updateRendering: function (callback) {
-            logger.debug(this.id + "._updateRendering");
-
-            if (this._contextObj !== null) {
-                dojoStyle.set(this.domNode, "display", "block");
-            } else {
-                dojoStyle.set(this.domNode, "display", "none");
-            }
-
-            this._executeCallback(callback, "_updateRendering");
-        },
-
-        // Shorthand for running a microflow
-        _execMf: function (mf, guid, cb) {
-            logger.debug(this.id + "._execMf");
-            if (mf && guid) {
-                mx.ui.action(mf, {
-                    params: {
-                        applyto: "selection",
-                        guids: [guid]
-                    },
-                    callback: lang.hitch(this, function (objs) {
-                        if (cb && typeof cb === "function") {
-                            cb(objs);
-                        }
-                    }),
-                    error: function (error) {
-                        console.debug(error.description);
-                    }
-                }, this);
-            }
-        },
-
-        // Shorthand for executing a callback, adds logging to your inspector
-        _executeCallback: function (cb, from) {
-            logger.debug(this.id + "._executeCallback" + (from ? " from " + from : ""));
-            if (cb && typeof cb === "function") {
-                cb();
-            }
-        }
-    });
-});
-
-require(["mxtray/widget/mxtray"]);
