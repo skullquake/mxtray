@@ -1,7 +1,6 @@
 require(
 	{
-		packages:[
-		]
+		packages:[]
 	},
 	[
 		"dojo/_base/declare",
@@ -55,20 +54,41 @@ require(
 					this._handles=[];
 				},
 				postCreate:function(){
-dojo.style(this.domNode,'position','fixed')
-dojo.style(this.domNode,'bottom','8px')
-dojo.style(this.domNode,'right','8px')
-dojo.style(this.domNode,'z-index','999999999999999999!important')
+					dojo.style(this.domNode,'position','absolute')
+					dojo.style(this.domNode,'bottom','8px')
+					dojo.style(this.domNode,'right','8px')
+					dojo.style(this.domNode,'z-index','99999999999999999999999!important')
+					this.placeAt(dojo.query('body')[0]);
 					this.draw();
 					this.setupObserver();
 				},
 				setupObserver:function(){
-					this.observer=new MutationObserver(dojo.hitch(this,function(mutations) {
-						this.observer.disconnect();
-						this.draw();
-						this.observer.observe(document, {attributes: false, childList: true, characterData: false, subtree:true});
-					}));
-					this.observer.observe(document, {attributes: false, childList: true, characterData: false, subtree:true});
+					this.observer=new MutationObserver(
+						dojo.hitch(
+							this,
+							function(mutations) {
+								this.observer.disconnect();
+								this.draw();
+								this.observer.observe(
+									document,{
+										attributes:false,
+										childList:true,
+										characterData:false,
+										subtree:true
+									}
+								);
+							}
+						)
+					);
+					this.observer.observe(
+						document,
+						{
+							attributes:false,
+							childList:true,
+							characterData:false,
+							subtree:true
+						}
+					);
 				},
 				getdata:function(){
 					this.windows={};
@@ -176,15 +196,9 @@ dojo.style(this.domNode,'z-index','999999999999999999!important')
 				uninitialize:function(){
 				},
 				destroy:function(){
+					this.observer.disconnect();
 				},
 				_updateRendering:function(callback){
-					/*
-					if(this._contextObj!==null){
-						dojoStyle.set(this.domNode,"display","block");
-					} else {
-						dojoStyle.set(this.domNode,"display","none");
-					}
-					*/
 					this._executeCallback(callback,"_updateRendering");
 				},
 				_execMf:function(mf,guid,cb){
