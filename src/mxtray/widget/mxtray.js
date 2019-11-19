@@ -54,13 +54,54 @@ require(
 					this._handles=[];
 				},
 				postCreate:function(){
-					dojo.style(this.domNode,'position','absolute')
-					dojo.style(this.domNode,'bottom','8px')
-					dojo.style(this.domNode,'right','8px')
-					dojo.style(this.domNode,'z-index','999999999999999999')
-					this.placeAt(dojo.query('body')[0]);
-					this.draw();
-					this.setupObserver();
+					if(!this.checkInstance()){
+						console.log(this.id+': instance already exists: killing...');
+						//this.destroy();
+					}else{
+						console.log(this.id+': instance does not exist: continuting...');
+						/*
+						if(dojo.query('.mx-tray-incubator').length>0){
+							console.log('a');
+							this.trayIncubator=dojo.query('.mx-tray-incubator')[0];
+						}else{
+							console.log('b');
+							this.trayIncubator=dojo.create(
+								'div',
+								{
+									'class':'mx-tray-incubator'
+								}
+							);
+							dojo.query('body')[0].appendChild(this.trayIncubator);
+						}
+						this.trayContainer=dojo.create(
+							'div',
+							{
+								'class':'mx-tray-container',
+								'id':this.id
+							}
+						);
+						this.trayContainer.appendChild(this.trayIncubator);
+						*/
+						dojo.style(this.domNode,'position','fixed')
+						dojo.style(this.domNode,'bottom','8px')
+						dojo.style(this.domNode,'right','8px')
+						dojo.style(this.domNode,'z-index','999999999999999999')
+						this.draw();
+						this.setupObserver();
+						console.log(this.trayIncubator);
+						console.log(this.trayContainer);
+						//this.placeAt(dojo.query('body')[0]);//skipped due to inability to destroy (want an instance)
+					}
+				},
+				checkInstance:function(){
+					return dijit.registry.toArray().filter(
+						dojo.hitch(
+							this,
+							function(wid){
+								return wid.declaredClass==this.declaredClass;
+							}
+						)
+					).length>0;
 				},
 				setupObserver:function(){
 					this.observer=new MutationObserver(
@@ -196,7 +237,8 @@ require(
 				uninitialize:function(){
 				},
 				destroy:function(){
-					this.observer.disconnect();
+					if(this.observer!=null)this.observer.disconnect();
+					dojo.destroy(this.domNode);
 				},
 				_updateRendering:function(callback){
 					this._executeCallback(callback,"_updateRendering");
